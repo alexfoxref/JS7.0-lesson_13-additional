@@ -522,65 +522,65 @@ window.addEventListener('DOMContentLoaded', () => {
 
 // Адаптивный js Slider
 
-    let slideIndex = 1,
-        slides = document.querySelectorAll('.slider-item'),
-        prev = document.querySelector('.prev'),
-        next = document.querySelector('.next'),
-        dotsWrap = document.querySelector('.slider-dots'),
-        dots = document.querySelectorAll('.dot'),
-        wrap = document.querySelector('.wrap'),
-        lastSlideIndex = 1;
+let slideIndex = 1,
+    slides = document.querySelectorAll('.slider-item'),
+    prev = document.querySelector('.prev'),
+    next = document.querySelector('.next'),
+    dotsWrap = document.querySelector('.slider-dots'),
+    dots = document.querySelectorAll('.dot'),
+    wrap = document.querySelector('.wrap'),
+    lastSlideIndex = 1;
 
     wrap.style.height = slides[slideIndex - 1].getBoundingClientRect().height;
 
     showSlides(slideIndex);
 
     function showSlides(n) {
-        if (n > slides.length) {
-            slideIndex = 1;
-        }
-        if (n < 1) {
-            slideIndex = slides.length;
-        }
+    if (n > slides.length) {
+        slideIndex = 1;
+    }
+    if (n < 1) {
+        slideIndex = slides.length;
+    }
 
-        slides.forEach((item) => {
-            item.style.display = 'block';
-            item.classList.remove('fade');
-            item.style.transform = `translateX(${-100 * (slideIndex - 1)}%)`;
-        });
+    slides.forEach((item) => {
+        item.style.display = 'block';
+        item.classList.remove('fade');
+        item.style.transform = `translateX(${-100 * (slideIndex - 1)}%)`;
+    });
 
-        dots.forEach(item => {item.classList.remove('dot-active')});
-        dots[slideIndex - 1].classList.add('dot-active');
+    dots.forEach(item => {item.classList.remove('dot-active')});
+    dots[slideIndex - 1].classList.add('dot-active');
 
-        lastSlideIndex = slideIndex;
+    lastSlideIndex = slideIndex;
     }
 
     //анимация
-    
+
 
     function plusSlides(n) {
-        showSlides(slideIndex += n);
+    showSlides(slideIndex += n);
     }
 
     function currentSlide(n) {
-        showSlides(slideIndex = n);
+    showSlides(slideIndex = n);
     }
 
     prev.addEventListener('click', () => {
-        plusSlides(-1);
+    plusSlides(-1);
     });
 
     next.addEventListener('click', () => {
-        plusSlides(1);
+    plusSlides(1);
     });
 
     dotsWrap.addEventListener('click', event => {
-        dots.forEach((item, index) => {
-            if (event.target && event.target == item) {
-                currentSlide(index + 1);
-            }
-        });
+    dots.forEach((item, index) => {
+        if (event.target && event.target == item) {
+            currentSlide(index + 1);
+        }
     });
+});
 
 // Calc
 
@@ -603,36 +603,89 @@ window.addEventListener('DOMContentLoaded', () => {
         if (restDays.value == '' || persons.value == '') {
             totalValue.innerHTML = 0;
         } else {
-            // totalValue.innerHTML = total;
             let totalStr = total * place.options[place.selectedIndex].value + '';
 
-            animatedCost(totalStr);
+            // animatedCost(totalStr);
                 
+            animatedNum(totalStr, totalValue);
         }
     });
 
-    // анимация цифр
-    function animatedCost(str) {
-        let index = str.length - 1,
-            sum = 0,
-            mult = Math.pow(10, str.length - 1 - index);
+    // анимация цифр - без промисов на setInterval
 
-        let id = setInterval(() => {costFrame(str)}, 25);
+    // function animatedCost(str) {
+    //     let index = str.length - 1,
+    //         sum = 0,
+    //         mult = Math.pow(10, str.length - 1 - index);
 
-        function costFrame(str) {
-            if (sum < +str.slice(index)) {
-                sum += mult;
-                totalValue.textContent = sum;
-            } else {
-                totalValue.textContent = `${str.slice(--index)}`;
-                mult = Math.pow(10, str.length - 1 - index);
-            }
+    //     let id = setInterval(() => {costFrame(str)}, 25);
 
-            if (index < 0) {
-                clearInterval(id);
-                totalValue.textContent = `${(str).slice(0)}`;
-            }
+    //     function costFrame(str) {
+    //         if (sum < +str.slice(index)) {
+    //             sum += mult;
+    //             totalValue.textContent = sum;
+    //         } else {
+    //             totalValue.textContent = `${str.slice(--index)}`;
+    //             mult = Math.pow(10, str.length - 1 - index);
+    //         }
+
+    //         if (index < 0) {
+    //             clearInterval(id);
+    //             totalValue.textContent = `${(str).slice(0)}`;
+    //         }
+    //     }
+    // }
+
+    // еще один вариант - асинхронная ф-ция с использованием промисов
+
+    function animatedNum(str, element) {
+        let index = 0,
+            count = 0;
+    
+        function getNum(str) {
+            getOneNum(str)
+                .then((res) => {
+                    if (index == 0) {
+                        element.textContent = count
+                    } else {
+                        element.textContent = `${res.slice(0, index)}${count}`
+                    }
+                    count++;
+                })
+                .then(() => {
+                    waitTimeout(20)
+                        .then(() => {
+                            getNum(str)
+                        })
+                })
+                // .catch((err) => console.log(err))
         }
+    
+        function getOneNum(str) {
+            return new Promise((resolve, reject) => {
+                if (index < str.length) {
+                    if (count <= +str[index]) {
+                        resolve(str);
+                    } else {
+                        index++;
+                        (index < str.length) ? count = 0 : count = ''
+                        resolve(str);
+                    }
+                } else {
+                    // reject('конец числа');
+                    index = 0;
+                    count = 0;
+                }
+            })
+        }
+    
+        function waitTimeout(ms) {
+            return new Promise(resolve => {
+                setTimeout(resolve, ms);
+            })
+        }
+    
+        getNum(str);
     }
 
     restDays.addEventListener('input', function() {
@@ -644,12 +697,12 @@ window.addEventListener('DOMContentLoaded', () => {
         if (persons.value == '' || restDays.value == '') {
             totalValue.innerHTML = 0;
         } else {
-            // totalValue.innerHTML = total;
             let totalStr = total * place.options[place.selectedIndex].value + '';
             
             
-            animatedCost(totalStr);
+            // animatedCost(totalStr);
 
+            animatedNum(totalStr, totalValue);
 
         }
     });
@@ -659,9 +712,11 @@ window.addEventListener('DOMContentLoaded', () => {
             totalValue.innerHTML = 0;
         } else {
             let a = total,
-                totStr = a * this.options[this.selectedIndex].value + '';
+                totalStr = a * this.options[this.selectedIndex].value + '';
 
-            animatedCost(totStr);
+            // animatedCost(totalStr);
+
+            animatedNum(totalStr, totalValue);
 
         }
     });
